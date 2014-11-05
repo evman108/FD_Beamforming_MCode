@@ -1,10 +1,6 @@
 
-	USE_AGC = true;
 
-	%External trigger mode requires a connection from TRIGOUT_D0 on node 0
-	% to TRIGIN_D3 on node 1 (see http://warpproject.org/w/WARPLab/Examples for details)
-	USE_EXTERNAL_TRIGGER = true;
-	TXRX_DELAY = 45; % not exact
+
 
 	%Create a vector of node objects
 	% Note: comment out wl_initNodes after running once to keep constant

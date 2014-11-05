@@ -28,8 +28,10 @@ NUMNODES = 2; %must be set to 2 for now
 % choose how many transmit and receive antennas
 % you wish to use. Can be arbitrarty in simulation, 
 % when using with WARP boards, must be less than 4. 
-numTxAntennas = 10;
+numTxAntennas = 2;
 numRxAntennas = 1;
+
+numUsers = 1;
 
 % There is ringing in the recived sigal 
 % that lasts nearly 4e3 samples. a
@@ -62,7 +64,7 @@ NUM_SHORT_SYMS_REP = 30;
 %%%%%%%%% Simulation Parameters %%%%%%%%%%%%%%%%
 % Choose a SNR for the sim-only version. 
 snr_dB = 30;
-MODEL_NOISE = false;
+MODEL_NOISE = true;
 MODEL_FADING = true;
 % MODEL_CFO = false;
 % MODEL_DELAY = false;

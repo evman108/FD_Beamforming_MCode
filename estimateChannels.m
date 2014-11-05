@@ -1,4 +1,4 @@
-% H_est = function soundChannels(...
+% H_est = function estimateChannels(...
 % 	USE_WARPLAB_TXRX,
 % 	 numRxAntennas, 
 % 	 numTxAntennas,
@@ -21,27 +21,11 @@
 		%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 		% generate a random channel matrix
+		H = rand(numRxAntennas,numTxAntennas) + j*rand(numRxAntennas,numTxAntennas); 
 
-		if MODEL_FADING	== true
-			H =  1./sqrt(2) * (randn(numRxAntennas,numTxAntennas) ...
-	               + j*randn(numRxAntennas,numTxAntennas)); 
-		else
-			%H = ones(numRxAntennas,numTxAntennas);
-			%H = 1./sqrt(2) * (ones(numRxAntennas,numTxAntennas) ...
-	        %       + j*ones(numRxAntennas,numTxAntennas));
-			H = 1./sqrt(2) * (ones(numRxAntennas,numTxAntennas)+ ...
-			                  (-1).^(1:numTxAntennas)*j);
-		end
-
-		if MODEL_NOISE == true
-			% generate an AWGN noise vector
-			rx_noise = (1/(sqrt(2)*db2mag(snr_dB))) *  complex(randn(numRxAntennas,txLength), ...
+		% generate an AWGN noise vector
+		rx_noise = (1/db2mag(snr_dB)) *  complex(randn(numRxAntennas,txLength), ...
 		                                         randn(numRxAntennas,txLength)) .';
-		else
-			rx_noise = zeros(numRxAntennas,txLength).';
-		end
-
-
 
 		% apply the channel model. 
 		rx_IQ = (H * trainSignal .') .' + rx_noise;
@@ -51,6 +35,11 @@
 		%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 		% Transmit and receive signal using WARPLab
 		%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+		node_tx = nodes(1);
+		node_rx = nodes(2);
+		% RF_TX = RFA;
+		% RF_RX = RFA;
 
 		%Set up the baseband for the experiment
 		wl_basebandCmd(nodes,'tx_delay',0);
@@ -118,36 +107,36 @@
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	% Visualize results for channel estimation 
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-	if plotWaveforms
 
-		figure('Name', 'Received Signal Sounding Phase');
-		colorOrder = get(gca, 'ColorOrder');
-		for rxAnt = 1:numRxAntennas
-			ax(rxAnt,1) = subplot(numRxAntennas+1,2,2*(rxAnt-1)+1);
-			plot(0:(length(rx_IQ)-1),real(rx_IQ(:,rxAnt)), 'color', colorOrder(rxAnt,:))
-			xlabel('Sample Index')
-			title(strcat('Antenna #', num2str(rxAnt), ' Received I'))
-			axis tight;
-			ylim([-1.5,1.5]);
-
-			ax(rxAnt,2) = subplot(numRxAntennas+1,2,2*(rxAnt-1)+2);
-			plot(0:(length(rx_IQ)-1),imag(rx_IQ(:,rxAnt)), 'color', colorOrder(rxAnt,:))
-			xlabel('Sample Index')
-			title(strcat('Antenna #', num2str(rxAnt), ' Received Q'))
-			axis tight
-			ylim([-1.5,1.5])
-		end
-
-		linkaxes(ax,'x')
-		subplot(numRxAntennas+1,1,numRxAntennas+1)
-		hold on
-		for rxAnt = 1:numRxAntennas
-			plot(0:(length(rx_RSSI)-1),rx_RSSI(:,rxAnt), 'color', colorOrder(rxAnt,:))
-		end
-		hold off
-		%legend('RFA','RFB','location','southeast')
-		axis tight
+	cf = cf+1;
+	figure(cf);clf;
+	colorOrder = get(gca, 'ColorOrder');
+	for rxAnt = 1:numRxAntennas
+		ax(rxAnt,1) = subplot(numRxAntennas+1,2,2*(rxAnt-1)+1);
+		plot(0:(length(rx_IQ)-1),real(rx_IQ(:,rxAnt)), 'color', colorOrder(rxAnt,:))
 		xlabel('Sample Index')
-		title('Received RSSI')
-	end % plot waveforms
+		title(strcat('Antenna #', num2str(rxAnt), ' Received I'))
+		axis tight;
+		ylim([-1.5,1.5]);
+
+		ax(rxAnt,2) = subplot(numRxAntennas+1,2,2*(rxAnt-1)+2);
+		plot(0:(length(rx_IQ)-1),imag(rx_IQ(:,rxAnt)), 'color', colorOrder(rxAnt,:))
+		xlabel('Sample Index')
+		title(strcat('Antenna #', num2str(rxAnt), ' Received Q'))
+		axis tight
+		ylim([-1.5,1.5])
+	end
+
+	linkaxes(ax,'x')
+	subplot(numRxAntennas+1,1,numRxAntennas+1)
+	hold on
+	for rxAnt = 1:numRxAntennas
+		plot(0:(length(rx_RSSI)-1),rx_RSSI(:,rxAnt), 'color', colorOrder(rxAnt,:))
+	end
+	hold off
+	%legend('RFA','RFB','location','southeast')
+	axis tight
+	xlabel('Sample Index')
+	title('Received RSSI')
+
 % end

@@ -66,7 +66,7 @@ NUM_SHORT_SYMS_REP = 30;
 
 %%%%%%%%% Simulation Parameters %%%%%%%%%%%%%%%%
 % Choose a SNR for the sim-only version. 
-snr_dB = 100;
+snr_dB = 30;
 
 
 if USE_WARPLAB_TXRX

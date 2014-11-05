@@ -1,0 +1,621 @@
+{
+	"auto_complete":
+	{
+		"selected_items":
+		[
+			[
+				"MF",
+				"MF_beamformGain"
+			],
+			[
+				"be",
+				"MF_beamformGain"
+			],
+			[
+				"pl",
+				"plotWaveforms"
+			],
+			[
+				"pkt",
+				"pktIndx"
+			],
+			[
+				"nu",
+				"numTxAntennas"
+			],
+			[
+				"USE",
+				"USE_WARPLAB_TXRX"
+			],
+			[
+				"MODEL",
+				"MODEL_FADING"
+			],
+			[
+				"H",
+				"H_eq"
+			],
+			[
+				"trai",
+				"trainSignal"
+			],
+			[
+				"tx",
+				"txLength"
+			],
+			[
+				"num",
+				"numTxAntennas"
+			],
+			[
+				"gu",
+				"guardIntervalLength"
+			],
+			[
+				"clo",
+				"colorOrder"
+			],
+			[
+				"end",
+				"enabled"
+			],
+			[
+				"rx_",
+				"rx_pilots"
+			],
+			[
+				"channel",
+				"channelEstimationError"
+			],
+			[
+				"h_",
+				"h_AA_phase_est_perSample"
+			],
+			[
+				"unw",
+				"unwrap"
+			],
+			[
+				"gua",
+				"guardIntervalLength"
+			],
+			[
+				"sign",
+				"signalPilot"
+			]
+		]
+	},
+	"buffers":
+	[
+		{
+			"file": "fd_beamform_compare.m",
+			"settings":
+			{
+				"buffer_size": 17606,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "beamformTest.m",
+			"settings":
+			{
+				"buffer_size": 855,
+				"line_ending": "Unix",
+				"name": "P = 1"
+			}
+		},
+		{
+			"file": "soundChannels.m",
+			"settings":
+			{
+				"buffer_size": 4779,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "transmitData.m",
+			"settings":
+			{
+				"buffer_size": 2317,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"settings":
+			{
+				"buffer_size": 0,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "/Users/evaneverett/Dropbox/FD_Beamform_Project/WarpLabCode/selfIntCxDebug.m",
+			"settings":
+			{
+				"buffer_size": 23897,
+				"line_ending": "Windows"
+			}
+		},
+		{
+			"file": "/Users/evaneverett/Dropbox/FD_Beamform_Project/WarpLabCode/WARPLab_Examples/wl_example_siso_ofdm_txrx.m",
+			"settings":
+			{
+				"buffer_size": 14452,
+				"line_ending": "Windows"
+			}
+		},
+		{
+			"file": "commFlow.m",
+			"settings":
+			{
+				"buffer_size": 933,
+				"line_ending": "Windows"
+			}
+		}
+	],
+	"build_system": "",
+	"command_palette":
+	{
+		"height": 0.0,
+		"selected_items":
+		[
+		],
+		"width": 0.0
+	},
+	"console":
+	{
+		"height": 0.0,
+		"history":
+		[
+		]
+	},
+	"distraction_free":
+	{
+		"menu_visible": true,
+		"show_minimap": false,
+		"show_open_files": false,
+		"show_tabs": false,
+		"side_bar_visible": false,
+		"status_bar_visible": false
+	},
+	"file_history":
+	[
+		"/Users/evaneverett/GitHub/FD_Beamforming_MCode/temp.m",
+		"/Users/evaneverett/GitHub/FD_Beamforming_MCode/miso_zero_forcing_nodeSync.m",
+		"/Users/evaneverett/Dropbox/FD_Beamform_Project/WarpLabCode/selfIntCxDebug.m",
+		"/Users/evaneverett/Dropbox/FD_Beamform_Project/WarpLabCode/WARPLab_Examples/miso_channel_equalization_nodeSync.m",
+		"/Users/evaneverett/Dropbox/FD_Beamform_Project/WarpLabCode/WARPLab_Examples/mimo_channel_estimation_nodeSync_v2.m",
+		"/Users/evaneverett/Dropbox/FD_Beamform_Project/WarpLabCode/WARPLab_Examples/warplab_siso_example_Comm.m",
+		"/Users/evaneverett/SVN/WARP/ResearchApps/PHY/WARPLAB/WARPLab_v6p5/M_Code_Examples/v3/warplab_siso_example_Comm_v3.m",
+		"/Users/evaneverett/SVN/WARP/ResearchApps/PHY/WARPLAB/WARPLab_v6p5/M_Code_Examples/v3/warplab_siso_example_TxRxAGC_80211aPreamble_v3.m",
+		"/Users/evaneverett/SVN/WARP/ResearchApps/PHY/WARPLAB/WARPLab_v6p5/M_Code_Examples/v3/readme.txt",
+		"/Users/evaneverett/Dropbox/FD_Beamform_Project/WarpLabCode/sisoChannelEstimationExample.m",
+		"/Users/evaneverett/Dropbox/FD_Beamform_Project/WarpLabCode/WARPLab_Examples/wl_example_siso_txrx_nodeSync.m",
+		"/Users/evaneverett/Dropbox/FD_Beamform_Project/WarpLabCode/WARPLab_Examples/mimo_channel_estimation_nodeSync.m",
+		"/Users/evaneverett/Dropbox/FD_Beamform_Project/WarpLabCode/WARPLab_Examples/siso_channel_estimation_nodeSync.m",
+		"/Users/evaneverett/SVN/WARP/ResearchApps/PHY/WARPLAB/WARPLab7/M_Code_Reference/util/wl_cmd_doc.m",
+		"/Users/evaneverett/Dropbox/FD_Beamform_Project/WarpLabCode/WARPLab_Examples/wl_example_siso_ofdm_txrx.m",
+		"/Users/evaneverett/Dropbox/FD_Beamform_Project/WarpLabCode/nullSteer_v2.m",
+		"/Users/evaneverett/Dropbox/FD_Beamform_Project/WarpLabCode/nullSteer_v1.m",
+		"/Users/evaneverett/Dropbox/FD_Beamform_Project/WarpLabCode/mimiChannelEstimationExample.m",
+		"/Users/evaneverett/Dropbox/FD_Beamform_Project/WarpLabCode/MelissaPacketConstruction.m",
+		"/Users/evaneverett/Dropbox/FD_Beamform_Project/WarpLabCode/mimoNarrowbandChannelEstimationComparison.m",
+		"/Users/evaneverett/Dropbox/FD_Beamform_Project/WarpLabCode/mimoNarrowbandChannelEstimationExample.m",
+		"/Users/evaneverett/Dropbox/FD_Beamform_Project/WarpLabCode/mimoNarrowbandChannelEstimationExample",
+		"/Users/evaneverett/Dropbox/Mellissa_OFDM_FD_Code.zip",
+		"/Users/evaneverett/Dropbox/FD_Beamform_Project/WarpLabCode/commFlow.m"
+	],
+	"find":
+	{
+		"height": 35.0
+	},
+	"find_in_files":
+	{
+		"height": 0.0,
+		"where_history":
+		[
+		]
+	},
+	"find_state":
+	{
+		"case_sensitive": true,
+		"find_history":
+		[
+			"H",
+			"precoder",
+			"rand",
+			"sampFreq",
+			"power",
+			"sqrt",
+			"sqrt(2)",
+			"precoder",
+			"pkt",
+			"plot",
+			"plotWaveforms",
+			"precoder",
+			"rssiPreambleStart",
+			"payload",
+			"txData",
+			"MODEL_NOISE",
+			"nodes(1)",
+			"node_tx",
+			"Frame",
+			"cf",
+			"rx_payload_eq",
+			"figure",
+			"clf",
+			"Channel estimation error",
+			"Length",
+			"SAMP_FREQ",
+			"freq",
+			"sampFreq",
+			"H",
+			"TXRX_DELAY",
+			"exp",
+			"TXRX_DELAY",
+			"txLength",
+			"H",
+			".8",
+			"trainSignal",
+			"RF_B",
+			"RF_A",
+			"TXRX_DELAY",
+			"txPilotStartIndices",
+			"txLength",
+			"unwrap",
+			"trainStart_A",
+			"h_AB_mag_est"
+		],
+		"highlight": true,
+		"in_selection": false,
+		"preserve_case": false,
+		"regex": false,
+		"replace_history":
+		[
+			""
+		],
+		"reverse": false,
+		"show_context": true,
+		"use_buffer2": true,
+		"whole_word": false,
+		"wrap": true
+	},
+	"groups":
+	[
+		{
+			"selected": 0,
+			"sheets":
+			[
+				{
+					"buffer": 0,
+					"file": "fd_beamform_compare.m",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 17606,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								17194,
+								17194
+							]
+						],
+						"settings":
+						{
+							"incomplete_sync": null,
+							"remote_loading": false,
+							"synced": false,
+							"syntax": "Packages/Matlab/Matlab.tmLanguage",
+							"translate_tabs_to_spaces": false
+						},
+						"translation.x": 0.0,
+						"translation.y": 7281.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 0,
+					"type": "text"
+				},
+				{
+					"buffer": 1,
+					"file": "beamformTest.m",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 855,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								344,
+								227
+							]
+						],
+						"settings":
+						{
+							"auto_name": "P = 1",
+							"incomplete_sync": null,
+							"syntax": "Packages/Matlab/Matlab.tmLanguage"
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 2,
+					"type": "text"
+				},
+				{
+					"buffer": 2,
+					"file": "soundChannels.m",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 4779,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								599,
+								694
+							]
+						],
+						"settings":
+						{
+							"incomplete_sync": null,
+							"syntax": "Packages/Matlab/Matlab.tmLanguage",
+							"translate_tabs_to_spaces": false
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 1,
+					"type": "text"
+				},
+				{
+					"buffer": 3,
+					"file": "transmitData.m",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 2317,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								338,
+								338
+							]
+						],
+						"settings":
+						{
+							"incomplete_sync": null,
+							"syntax": "Packages/Matlab/Matlab.tmLanguage",
+							"translate_tabs_to_spaces": false
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 3,
+					"type": "text"
+				},
+				{
+					"buffer": 4,
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 0,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								0,
+								0
+							]
+						],
+						"settings":
+						{
+							"incomplete_sync": null,
+							"syntax": "Packages/Text/Plain text.tmLanguage"
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 4,
+					"type": "text"
+				},
+				{
+					"buffer": 5,
+					"file": "/Users/evaneverett/Dropbox/FD_Beamform_Project/WarpLabCode/selfIntCxDebug.m",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 23897,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								4079,
+								4088
+							]
+						],
+						"settings":
+						{
+							"incomplete_sync": null,
+							"remote_loading": false,
+							"synced": false,
+							"syntax": "Packages/Matlab/Matlab.tmLanguage",
+							"tab_size": 4,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 977.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 6,
+					"type": "text"
+				},
+				{
+					"buffer": 6,
+					"file": "/Users/evaneverett/Dropbox/FD_Beamform_Project/WarpLabCode/WARPLab_Examples/wl_example_siso_ofdm_txrx.m",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 14452,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								1134,
+								1134
+							]
+						],
+						"settings":
+						{
+							"incomplete_sync": null,
+							"remote_loading": false,
+							"synced": false,
+							"syntax": "Packages/Matlab/Matlab.tmLanguage",
+							"tab_size": 4,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 29.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 5,
+					"type": "text"
+				},
+				{
+					"buffer": 7,
+					"file": "commFlow.m",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 933,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								94,
+								94
+							]
+						],
+						"settings":
+						{
+							"incomplete_sync": null,
+							"remote_loading": false,
+							"synced": false,
+							"syntax": "Packages/Matlab/Matlab.tmLanguage",
+							"translate_tabs_to_spaces": false
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 7,
+					"type": "text"
+				}
+			]
+		}
+	],
+	"incremental_find":
+	{
+		"height": 23.0
+	},
+	"input":
+	{
+		"height": 0.0
+	},
+	"layout":
+	{
+		"cells":
+		[
+			[
+				0,
+				0,
+				1,
+				1
+			]
+		],
+		"cols":
+		[
+			0.0,
+			1.0
+		],
+		"rows":
+		[
+			0.0,
+			1.0
+		]
+	},
+	"menu_visible": true,
+	"output.find_results":
+	{
+		"height": 0.0
+	},
+	"output.sftp":
+	{
+		"height": 100.0
+	},
+	"project": "FD_Beamform.sublime-project",
+	"replace":
+	{
+		"height": 42.0
+	},
+	"save_all_on_build": true,
+	"select_file":
+	{
+		"height": 0.0,
+		"selected_items":
+		[
+		],
+		"width": 0.0
+	},
+	"select_project":
+	{
+		"height": 0.0,
+		"selected_items":
+		[
+		],
+		"width": 0.0
+	},
+	"select_symbol":
+	{
+		"height": 0.0,
+		"selected_items":
+		[
+		],
+		"width": 0.0
+	},
+	"selected_group": 0,
+	"settings":
+	{
+	},
+	"show_minimap": true,
+	"show_open_files": false,
+	"show_tabs": true,
+	"side_bar_visible": true,
+	"side_bar_width": 150.0,
+	"status_bar_visible": true,
+	"template_settings":
+	{
+	}
+}

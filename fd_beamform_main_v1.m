@@ -4,6 +4,12 @@
 % Two transmit antennas (M_T = 2) One user, K=1, and one receive antenna,
 % M_R = 1
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%
+%Notes: because the beamforming is not applied to the preamble, we clip once we beamform. 
+%Need a better way to do all this. Perhaps RSSI is better. 
+%%%
+
 clear all; 
 clc; 
 close all;
@@ -11,11 +17,25 @@ cf = 0;
 
 
 %%%%%%%%%%%%%%%%%  User Parameters  %%%%%%%%%%%%%%
-USE_AGC = true;
-USE_WARPLAB_TXRX = false;
+USE_WARPLAB_TXRX = true;
 
-numPkts = 100;
+DEBUG_CANCELLATION = false;
 
+PLOT_CHANNEL_SOUNDING = false;
+
+PLOT_RX_DATA = true;
+
+VERBOSE = false;
+
+numPkts = 20;
+
+
+%%%%%%%%% WARPLab Parameters %%%%%%%%%%%%%%%
+%External trigger mode requires a connection from TRIGOUT_D0 on node 0
+% to TRIGIN_D3 on node 1 (see http://warpproject.org/w/WARPLab/Examples for details)
+USE_EXTERNAL_TRIGGER = true;
+TXRX_DELAY = 45; % not exact
+USE_AGC = false;
 
 %Use sane defaults for hardware-dependent params in sim-only version
 maxTxLength = 32768;
@@ -30,7 +50,16 @@ NUMNODES = 2; %must be set to 2 for now
 % when using with WARP boards, must be less than 4. 
 numTxAntennas = 2;
 numRxAntennas = 1;
-numUsers = 1;
+numUsers = 1; % must be one 
+
+if numUsers > 1
+	error('I cannot handle multiple users yet')
+end
+
+if numTxAntennas > 50
+	warning('Pilots nearly consuming whole packet')
+end
+
 
 % There is ringing in the recived sigal 
 % that lasts nearly 4e3 samples. a
@@ -159,23 +188,55 @@ for txAntenna = 1:numTxAntennas;
 											+ txAntenna * guardIntervalLength + TXRX_DELAY;
 end
 
+
+
+zeroForce.selfIntSuppression = zeros(1,numPkts);
+matchedFilter.selfIntSuppression = zeros(1,numPkts);
+zeroForce.beamformGain = zeros(1,numPkts);
+matchedFilter.beamformGain = zeros(1,numPkts);
+
 plotWaveforms = true ;
-selfIntSuppression = zeros(1,numPkts);
-MF_beamformGain = zeros(1,numPkts);
 
 for pktIndx = 1:numPkts
 
-	fprintf('\n\nPacket # %d:\n', pktIndx)
+	if VERBOSE
+		fprintf('\n\nPacket # %d:\n', pktIndx)
+	else
+		perccount(pktIndx,numPkts)
+	end % VERBOSE
 
 	if pktIndx > 1
 		plotWaveforms = false ;
 	end
 
+	if USE_WARPLAB_TXRX == false
+
+		% generate a random channel matrix that will hold for all packet transmisstion
+		% in this loop
+		if MODEL_FADING	== true
+
+			H_selfInt = 1./sqrt(2) * (randn(numRxAntennas,numTxAntennas) ...
+	                                  + j*randn(numRxAntennas,numTxAntennas)); 
+
+			H_user = 1./sqrt(2) * (randn(numUsers,numTxAntennas) ...
+                                   + j*randn(numUsers,numTxAntennas)); 
+		else
+			error('deterministic channels not implmented')
+		end
+
+	end % USE_WARPLAB_TXRX == false
 
 	% This script transmit the training packet and has all the users estimate their channel
 	% responses. % It is  global script. The only value that will be set (hopefully)
 	% is H the simulated channel and H_est the estimated channel matrix. 
 	fd_beamform_soundChannels_v1
+
+	if plotWaveforms && PLOT_CHANNEL_SOUNDING
+		plot_IQ(bs_IQ, bs_RSSI, numRxAntennas, 'BS Rx, Channel Sounding')
+		plot_IQ(user_IQ, user_RSSI, numUsers, 'User Rx, Channel Sounding')
+	end
+
+
 
 
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -191,7 +252,9 @@ for pktIndx = 1:numPkts
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-	% 2.1 Create the transit signal, 
+	% 2.1 Create the transit signal, zero-force to 
+	% to rx antennas, and user rest to beamform to 
+	% intednded users. 
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 	payloadLength = maxTxLength - length(trainSignal);
@@ -214,12 +277,12 @@ for pktIndx = 1:numPkts
 		precoder = selfIntNullspace(:,1);
 	end
 
+	precoderPower = pow2db(sum(sum(abs(precoder).^2)));
 
-	if abs(sum(abs(precoder).^2) - 1) > 1e-6 
-		error('precoder does not have unity power')
+
+	if abs(precoderPower - 0) > 1e-6 
+		error('Zero-forcing precoder does not have unity power')
 	end
-
-	precoderPower = pow2db(sum(abs(precoder).^2));
 
 	payload_precoded = (precoder * payload .') .';
 
@@ -238,6 +301,13 @@ for pktIndx = 1:numPkts
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	fd_beamform_txrx_v1
 
+	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	% Visualize results for channel estimation 
+	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+	if plotWaveforms && PLOT_RX_DATA
+		plot_IQ(bs_IQ, bs_RSSI, numRxAntennas, 'BS Rx, Zero-forcing')
+		plot_IQ(user_IQ, user_RSSI, numUsers, 'User Rx, Zero-forcing')
+	end % plot plotWaveforms
 
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	% 2.3 Users and base station process their received signals.
@@ -248,65 +318,52 @@ for pktIndx = 1:numPkts
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 
-	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-	% 2.3.1 Estimate Channels for equalization
-	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-	% get the received pilots
-	rx_pilots = zeros(pilotLength, numTxAntennas*numRxAntennas);
-	for txAntenna = 1:numTxAntennas
-
-		pilots = rx_IQ(txPilotStartIndices(txAntenna)+1 ...
-			           : txPilotStartIndices(txAntenna)+pilotLength,:);
-
-		rx_pilots(:,(txAntenna-1)*numRxAntennas+1 : ...
-			         txAntenna*numRxAntennas) = pilots;
-							    
-	end
-
-	% just divide each by the pilots
-	H_eq = reshape(mean(rx_pilots ./ repmat(signalPilot,1,numTxAntennas*numRxAntennas)),numRxAntennas,numTxAntennas);
-
-
 	%%%%%%%%%%%%%%%%%%%%%%%%%%
 	% 2.3.2 Payload processing
 	%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 	payloadStart = length(trainSignal) + TXRX_DELAY + 1;
 
-	rx_payload = rx_IQ(payloadStart:end);
+	rx_payload = bs_IQ(payloadStart:end);
+
+	user_payload = user_IQ(payloadStart:end);
 
 	%rx_payload_eq = rx_payload ./ sum(H_eq);
 	rx_payload_eq = rx_payload ;
+
+	user_payload_eq = rx_payload ;
 
 	% there will be some error at first and last, so igore that
 	% n_samp_ignore = 0;
 	% precodingError = pow2db(mean(abs(payload(n_samp_ignore+1:length(rx_payload_eq)-n_samp_ignore) - rx_payload_eq(n_samp_ignore+1:end-n_samp_ignore)).^2));
 
 
-
 	rssiPreambleStop = length(preamble);
 
 	rssiPreambleStart = rssiPreambleStop - numSampsForUncodedEstimation;
 
-	rx_RSSI_Samples = rx_IQ(rssiPreambleStart + TXRX_DELAY : rssiPreambleStop + TXRX_DELAY);
+	bs_RSSI_Samples = bs_IQ(rssiPreambleStart + TXRX_DELAY : rssiPreambleStop + TXRX_DELAY);
 
+	selfIntUnsupressed = pow2db(mean(abs(bs_RSSI_Samples).^2));
 
-	powerUnsupressed = pow2db(mean(abs(rx_RSSI_Samples).^2));
-
-	powerSupressed = pow2db(mean(abs(rx_payload).^2));
+	selfIntSupressed = pow2db(mean(abs(rx_payload).^2));
 
 	if USE_WARPLAB_TXRX == false
 		noiseFloor = pow2db(mean(abs(rx_noise(payloadStart:end)).^2));
 	end
 
-	nonCoherenctPower(pktIndx) = powerUnsupressed;
+	zeroForce.selfIntSuppression(pktIndx) = selfIntUnsupressed - selfIntSupressed;
 
-	suppression = powerUnsupressed - powerSupressed;
+	user_RSSI_Samples = user_IQ(rssiPreambleStart + TXRX_DELAY : rssiPreambleStop + TXRX_DELAY);
 
-	selfIntSuppression(pktIndx) = suppression;
+	userNoncoherentPower = pow2db(mean(abs(user_RSSI_Samples).^2));
 
-	if plotWaveforms	
+	userCoherentPower = pow2db(mean(abs(user_payload).^2));
+
+	zeroForce.beamformGain(pktIndx) = userCoherentPower - userNoncoherentPower;
+
+
+	if plotWaveforms && DEBUG_CANCELLATION	
 		figure('Name', 'Payload Rx vs Tx Zoomed'); 
 		plot(real(payload(1:300)),'b'); hold on
 		plot(real(rx_payload(1:300)),'r');
@@ -338,7 +395,8 @@ for pktIndx = 1:numPkts
 
 
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-	% 3.2 Create the transit signal, 
+	% 3.2 Create the transit signal, matched filter
+	% to users the ignores the self-interference
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 	payloadLength = maxTxLength - length(trainSignal);
@@ -354,12 +412,22 @@ for pktIndx = 1:numPkts
 	% payload = (.5 * (1 + square(t*payloadToneFreq/10))) .* payload; 
 
 	% conjugate beamforming
-	precoder = ctranspose(H_est_selfInt)./ sqrt(sum(abs(H_est_selfInt).^2)) ;
+	% precoder = ctranspose(H_est_selfInt)./ sqrt(sum(abs(H_est_selfInt).^2)) ;
+	%precoder = ctranspose(H_est_user)./ sqrt(sum(abs(H_est_user).^2)) ;
+
+	precoder = ctranspose(H_est_user) ./sqrt(sum(sum(abs(H_est_user).^2)));
+
 
 	% Blind precoder 
 	%precoder =[1; 1]./sqrt(numTxAntennas);
 
-	precoderPower = pow2db(sum(abs(precoder).^2));
+	precoderPower = pow2db(sum(sum(abs(precoder).^2)));
+
+
+	if abs(precoderPower - 0) > 1e-6 
+		error('Zero-forcing precoder does not have unity power')
+	end
+
 
 	% null combining
 	%precoder = null(H_est);
@@ -382,52 +450,55 @@ for pktIndx = 1:numPkts
 
 	fd_beamform_txrx_v1
 
-	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-	% 3.4.1 Estimate Channels for equalization
-	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-	% get the received pilots
-	rx_pilots = zeros(pilotLength, numTxAntennas*numRxAntennas);
-	for txAntenna = 1:numTxAntennas
-
-		pilots = rx_IQ(txPilotStartIndices(txAntenna)+1 ...
-			           : txPilotStartIndices(txAntenna)+pilotLength,:);
-
-		rx_pilots(:,(txAntenna-1)*numRxAntennas+1 : ...
-			         txAntenna*numRxAntennas) = pilots;
-							    
-	end
-
-	% just divide each by the pilots
-	H_eq = reshape(mean(rx_pilots ./ repmat(signalPilot,1,numTxAntennas*numRxAntennas)),numRxAntennas,numTxAntennas);
+	if plotWaveforms && PLOT_RX_DATA
+		plot_IQ(bs_IQ, bs_RSSI, numRxAntennas, 'BS Rx, Matched Filter')
+		plot_IQ(user_IQ, user_RSSI, numUsers, 'User Rx, Matched Filter')
+	end 
 
 
 	%%%%%%%%%%%%%%%%%%%%%%%%%%
-	% 2.3.2 Payload processing
+	% 3.3.2 Payload processing
 	%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-	rx_payload = rx_IQ(payloadStart:end);
+	rx_payload = bs_IQ(payloadStart:end);
+
+	user_payload = user_IQ(payloadStart:end);
 
 	%rx_payload_eq = rx_payload ./ sum(H_eq);
 	rx_payload_eq = rx_payload ;
+
+	user_payload_eq = rx_payload ;
 
 	% there will be some error at first and last, so igore that
 	% n_samp_ignore = 0;
 	% precodingError = pow2db(mean(abs(payload(n_samp_ignore+1:length(rx_payload_eq)-n_samp_ignore) - rx_payload_eq(n_samp_ignore+1:end-n_samp_ignore)).^2));
 
 
-	rx_RSSI_Samples = rx_IQ(rssiPreambleStart + TXRX_DELAY : rssiPreambleStop + TXRX_DELAY);
+	rssiPreambleStop = length(preamble);
 
+	rssiPreambleStart = rssiPreambleStop - numSampsForUncodedEstimation;
 
-	powerUnprecoded = pow2db(mean(abs(rx_RSSI_Samples).^2));
+	bs_RSSI_Samples = bs_IQ(rssiPreambleStart + TXRX_DELAY : rssiPreambleStop + TXRX_DELAY);
 
-	powerPrecoded = pow2db(mean(abs(rx_payload).^2));
+	selfIntUnsupressed = pow2db(mean(abs(bs_RSSI_Samples).^2));
 
-	beamformingGain = powerPrecoded - powerUnprecoded;
+	selfIntSupressed = pow2db(mean(abs(rx_payload).^2));
 
-	MF_beamformGain(pktIndx) = beamformingGain;
+	if USE_WARPLAB_TXRX == false
+		noiseFloor = pow2db(mean(abs(rx_noise(payloadStart:end)).^2));
+	end
 
-	if plotWaveforms	
+	matchedFilter.selfIntSuppression(pktIndx) = selfIntUnsupressed - selfIntSupressed;
+
+	user_RSSI_Samples = user_IQ(rssiPreambleStart + TXRX_DELAY : rssiPreambleStop + TXRX_DELAY);
+
+	userNoncoherentPower = pow2db(mean(abs(user_RSSI_Samples).^2));
+
+	userCoherentPower = pow2db(mean(abs(user_payload).^2));
+
+	matchedFilter.beamformGain(pktIndx) = userCoherentPower - userNoncoherentPower;
+
+	if plotWaveforms && DEBUG_CANCELLATION	
 		figure('Name', 'MF Payload Rx vs Tx Zoomed'); 
 		plot(real(payload(1:300)),'b'); hold on
 		plot(real(rx_payload(1:300)),'r');
@@ -448,17 +519,22 @@ for pktIndx = 1:numPkts
 
 end
 
-meanSuppression = pow2db(mean(db2pow(selfIntSuppression)));
+zeroForce.meanSuppression = pow2db(mean(db2pow(zeroForce.selfIntSuppression)));
+fprintf('\nZero Force, mean self-interference suppression: %.1f dB\n',...
+		 zeroForce.meanSuppression)
 
-fprintf('\nMean self-interference Suppression: %.1f dB\n', meanSuppression)
+zeroForce.meanBeamformGain = pow2db(mean(db2pow(zeroForce.beamformGain)));
+fprintf('Zero Force, mean beamforming gain: %.1f dB\n',...
+		 zeroForce.meanBeamformGain )
 
-meanMF_beamformGain = pow2db(mean(db2pow(MF_beamformGain)));
+matchedFilter.meanSuppression = pow2db(mean(db2pow(matchedFilter.selfIntSuppression)));
+fprintf('\nMatched Filter, mean self-interference suppression: %.1f dB\n',...
+		 matchedFilter.meanSuppression)
 
-fprintf('Mean beamforming gain: %.1f dB\n', meanMF_beamformGain)
+matchedFilter.meanBeamformGain = pow2db(mean(db2pow(matchedFilter.beamformGain)));
+fprintf('Matched Filter, mean beamforming gain: %.1f dB\n',...
+		 matchedFilter.meanBeamformGain )
 
-meanNonCoherentPower = pow2db(mean(db2pow(nonCoherenctPower)));
-
-fprintf('Mean non-coherent beamformin gain: %.1f dB\n', meanNonCoherentPower)
 
 
 
