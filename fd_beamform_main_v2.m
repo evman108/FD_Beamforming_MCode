@@ -27,32 +27,30 @@ PLOT_RX_DATA = true;
 
 VERBOSE = false;
 
-numPkts = 1;
-
-
-
-
-%Use sane defaults for hardware-dependent params in sim-only version
-maxTxLength = 32768;
-sampFreq = 40e6;
-Ts = 1/sampFreq;
-TXRX_DELAY_SIM = 0;
-
+numPkts = 10;
 
 
 %%%%%%%%% WARPLab Parameters %%%%%%%%%%%%%%%
 %External trigger mode requires a connection from TRIGOUT_D0 on node 0
 % to TRIGIN_D3 on node 1 (see http://warpproject.org/w/WARPLab/Examples for details)
 USE_EXTERNAL_TRIGGER = true;
-TXRX_DELAY_WARP = 45; % not exact
+TXRX_DELAY_WARP = 0; % not exact
 USE_AGC = false;
+TXRX_DELAY_WARP = 45;
+
+%Use sane defaults for hardware-dependent params in sim-only version
+TXRX_DELAY_SIM = 0;
+maxTxLength = 32768;
+sampFreq = 40e6;
+Ts = 1/sampFreq;
+
 
 NUMNODES = 2; %must be set to 2 for now
 
 % choose how many transmit and receive antennas
 % you wish to use. Can be arbitrarty in simulation, 
 % when using with WARP boards, must be less than 4. 
-numTxAntennas = 2;
+numTxAntennas = 4;
 numRxAntennas = 1;
 numUsers = 1; % must be one 
 
@@ -69,7 +67,6 @@ if USE_WARPLAB_TXRX
 else
 	TXRX_DELAY = TXRX_DELAY_SIM;
 end
-
 
 % There is ringing in the recived sigal 
 % that lasts nearly 4e3 samples. a
@@ -118,7 +115,7 @@ signalAmplitude = 1.0;
 
 if USE_WARPLAB_TXRX
 	
-fd_beamform_warplabsetup_v1
+fd_beamform_warplabsetup_v2
 
 
 end % if USE_WARPLAB_TXRX
@@ -239,7 +236,7 @@ for pktIndx = 1:numPkts
 	% This script transmit the training packet and has all the users estimate their channel
 	% responses. % It is  global script. The only value that will be set (hopefully)
 	% is H the simulated channel and H_est the estimated channel matrix. 
-	fd_beamform_soundChannels_v1
+	fd_beamform_soundChannels_v2
 
 	if plotWaveforms && PLOT_CHANNEL_SOUNDING
 		plot_IQ(bs_IQ, bs_RSSI, numRxAntennas, 'BS Rx, Channel Sounding')
@@ -309,7 +306,7 @@ for pktIndx = 1:numPkts
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	% 2.2 base station transmits its packet and users receive
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-	fd_beamform_txrx_v1
+	fd_beamform_txrx_v2
 
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	% Visualize results for channel estimation 
@@ -401,7 +398,7 @@ for pktIndx = 1:numPkts
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	% Phase 3.1 Now reestimate the channels
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-	fd_beamform_soundChannels_v1
+	fd_beamform_soundChannels_v2
 
 
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -458,7 +455,7 @@ for pktIndx = 1:numPkts
 	% 3.3 Transmit the data
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-	fd_beamform_txrx_v1
+	fd_beamform_txrx_v2
 
 	if plotWaveforms && PLOT_RX_DATA
 		plot_IQ(bs_IQ, bs_RSSI, numRxAntennas, 'BS Rx, Matched Filter')
