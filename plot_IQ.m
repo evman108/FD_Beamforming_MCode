@@ -27,6 +27,7 @@ function handle = plot_IQ(rx_IQ, rx_RSSI, numRxAntennas, name)
 	hold off
 	%legend('RFA','RFB','location','southeast')
 	axis tight
+	ylim([-80,0])
 	xlabel('Sample Index')
 	title('Received RSSI')
 

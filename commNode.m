@@ -3,7 +3,7 @@ classdef commNode < hgsetget
 	properties
 		name = 'CommNode'
 	
-		txData
+		txFrame
 		rx_IQ
 		RSSI
 

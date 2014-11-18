@@ -1,5 +1,5 @@
 function [pilot, trainSignal, txPilotStartIndices] =  generateTrainSequence( ...
-        numTxAntennas, pilotLength, pilotToneFrequency, guardIntervalLength, Ts)
+        numTxAntennas, pilotLength, pilotToneFrequency, pilotAmplitude, guardIntervalLength, Ts)
 
     trainLength =  numTxAntennas*pilotLength ...
                 + (numTxAntennas + 1) * guardIntervalLength;
@@ -9,7 +9,7 @@ function [pilot, trainSignal, txPilotStartIndices] =  generateTrainSequence( ...
     t = [0:Ts:(pilotLength-1)*Ts].'; 
 
     % create the pilot signal
-    signalPilot = 0.9 * exp (t*j*2*pi*pilotToneFrequency);
+    signalPilot = pilotAmplitude * exp (t*j*2*pi*pilotToneFrequency);
 
     % this will be the zero vectore transmitted when another antennas is sending its training
     zeroPilot = zeros(size(signalPilot));

@@ -16,6 +16,8 @@ classdef fd_beamform_wl_control < hgsetget
 		delay = 0;
 		snr_dB = 100;
 
+		eth_trig = 0;
+
 
 	end
 
@@ -45,9 +47,9 @@ classdef fd_beamform_wl_control < hgsetget
 		end
 
 
-		function txrx_6x2x1(self, bs, user, eth_trig)
+		function txrx_6x2x1(self, bs, user)
 
-			txLength = size(bs.txData,1);			
+			txLength = size(bs.txFrame,1);			
 
 			if self.USE_WARPLAB_TXRX == false; 
 
@@ -68,20 +70,20 @@ classdef fd_beamform_wl_control < hgsetget
 				end
 
 				if self.MODEL_DELAY
-					txData_delayed = [zeros(self.delay, size(bs.txData,2)); ...
-					                  bs.txData(1:end-self.delay,:)];
+					txFrame_delayed = [zeros(self.delay, size(bs.txFrame,2)); ...
+					                  bs.txFrame(1:end-self.delay,:)];
 				else
-					txData_delayed = bs.txData;
+					txFrame_delayed = bs.txFrame;
 				end
 				
 
 				% apply the channel model. 
-				bs.rx_IQ = (self.H_selfInt * txData_delayed .') .' + rx_noise;
+				bs.rx_IQ = (self.H_selfInt * txFrame_delayed .') .' + rx_noise;
 				bs.RSSI = mag2db(abs(bs.rx_IQ ));
 
 				% apply the channel model. 
 				
-			    user.rx_IQ = (self.H_user * txData_delayed .') .' + user_noise;
+			    user.rx_IQ = (self.H_user * txFrame_delayed .') .' + user_noise;
 				user.RSSI = mag2db(abs(user.rx_IQ ));
 
 				bs.rx_power_dBm   = bs.RSSI  ;
@@ -92,8 +94,8 @@ classdef fd_beamform_wl_control < hgsetget
 
 
 
-				wl_basebandCmd(bs.nodes(1),bs.txRadios{1}, 'write_IQ', bs.txData(:,1:4)); %First 4 columns of txData is for primary tx
-			    wl_basebandCmd(bs.nodes(2),bs.txRadios{2}, 'write_IQ', bs.txData(:,5:end)); %Second 2 columns of txData is for secondary tx
+				wl_basebandCmd(bs.nodes(1),bs.txRadios{1}, 'write_IQ', bs.txFrame(:,1:4)); %First 4 columns of txFrame is for primary tx
+			    wl_basebandCmd(bs.nodes(2),bs.txRadios{2}, 'write_IQ', bs.txFrame(:,5:end)); %Second 2 columns of txFrame is for secondary tx
 
 
 			    wl_basebandCmd(bs.nodes(1),sum(bs.txRadios{1}),'tx_buff_en');
@@ -106,13 +108,13 @@ classdef fd_beamform_wl_control < hgsetget
 			    wl_interfaceCmd(bs.nodes(2),sum(bs.rxRadios{2}),'rx_en');
 			    wl_interfaceCmd(user.nodes(1),sum(user.rxRadios{1}),'rx_en');
 
-			    eth_trig.send();
+			    self.eth_trig.send();
 
-			    user.rx_IQ = wl_basebandCmd(user.nodes(1),user.rxRadios{1},'read_IQ', 0, length(bs.txData));
-			    bs.rx_IQ = wl_basebandCmd(bs.nodes(2),bs.rxRadios{2},'read_IQ', 0, length(bs.txData));
+			    user.rx_IQ = wl_basebandCmd(user.nodes(1),user.rxRadios{1},'read_IQ', 0, length(bs.txFrame));
+			    bs.rx_IQ = wl_basebandCmd(bs.nodes(2),bs.rxRadios{2},'read_IQ', 0, length(bs.txFrame));
 
-			    bs.RSSI = wl_basebandCmd(bs.nodes(2),bs.rxRadios{2},'read_RSSI', 0, length(bs.txData)/4);
-			    user.RSSI = wl_basebandCmd(user.nodes(1), user.rxRadios{1}, 'read_RSSI', 0, length(bs.txData)/4)
+			    bs.RSSI = wl_basebandCmd(bs.nodes(2),bs.rxRadios{2},'read_RSSI', 0, length(bs.txFrame)/4);
+			    user.RSSI = wl_basebandCmd(user.nodes(1), user.rxRadios{1}, 'read_RSSI', 0, length(bs.txFrame)/4);
 
 			    user.agc_state = wl_basebandCmd(user.nodes(1),user.rxRadios{1},'agc_state');
 			    bs.agc_state = wl_basebandCmd(bs.nodes(2),bs.rxRadios{2},'agc_state');

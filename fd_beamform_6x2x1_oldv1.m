@@ -15,13 +15,7 @@ USE_AGC = true;
 RUN_CONTINOUSLY = false ;
 numPkts = 1;
 
-PAYLOAD_LENGTH = 2.^ 12; % max is 2^15
-
 TXRX_DELAY = 41;
-
-SHORT_SYMS_REPETITIONS =  4*30% default is 30
-
-NUM_PREAMBLE_SAMPLES_LNA_SETTLE = 300;
 
 numTxAntennas = 6;
 numUsers = 1;
@@ -36,17 +30,10 @@ pilotLength = 128; % length of per-antenna pilot symbol in samples
 % the frequency should be the center frequency around which communication will occur. 
 pilotToneFrequency = 1.25e6;
 
-payloadToneFreq = 1.25e6;
-
 % Choose the length of the guard interval between pilots from each antenna. 
 % This may not be necessary, but it does greatly aid in the visualization of 
 % the orthogonal pilots
 guardIntervalLength = 256;
-
-payloadAmplitude = 0.9;
-
-pilotAmplitude = 0.9;
-
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -58,7 +45,7 @@ experiment = fd_beamform_wl_control(...
     numTxAntennas, numRxAntennas,numUsers);
 
 experiment.set(...
-    'USE_WARPLAB_TXRX', true, ...
+    'USE_WARPLAB_TXRX', false, ...
     'MODEL_NOISE', true, ...
     'MODEL_DELAY', true, ...
     'snr_dB', 100, ...
@@ -82,8 +69,8 @@ if experiment.USE_WARPLAB_TXRX == true
     user = commNode(nodes(3));
 
     %Create a UDP broadcast trigger and tell each node to be ready for it
-    experiment.eth_trig = wl_trigger_eth_udp_broadcast;
-    wl_triggerManagerCmd(nodes,'add_ethernet_trigger',[experiment.eth_trig]);
+    eth_trig = wl_trigger_eth_udp_broadcast;
+    wl_triggerManagerCmd(nodes,'add_ethernet_trigger',[eth_trig]);
 
     %Read Trigger IDs into workspace
     [T_IN_ETH,T_IN_ENERGY,T_IN_AGCDONE,T_IN_REG,T_IN_D0,T_IN_D1,T_IN_D2,T_IN_D3] =  wl_getTriggerInputIDs(nodes(1));
@@ -122,7 +109,7 @@ if experiment.USE_WARPLAB_TXRX == true
     %please use the commented out line below:
     %
     %nodes(1).wl_triggerManagerCmd('output_config_delay',[T_OUT_BASEBAND,T_OUT_AGC],[50]); %50ns delay  - WARPLab 7.1.0
-    %1
+    %
     nodes(1).wl_triggerManagerCmd('output_config_delay',[T_OUT_BASEBAND,T_OUT_AGC],[56.25]); %56.25ns delay  - WARPLab 7.2.0
 
     %Get IDs for the interfaces on the boards. Since this example assumes each
@@ -132,7 +119,7 @@ if experiment.USE_WARPLAB_TXRX == true
 
     %Set up the interface for the experiment
     wl_interfaceCmd(nodes,'RF_ALL','tx_gains',2,20);
-    wl_interfaceCmd(nodes,'RF_ALL','channel',2.4,11);
+    wl_interfaceCmd(nodes,'RF_ALL','channel',2.4,14);
 
 
 
@@ -176,10 +163,9 @@ if experiment.USE_WARPLAB_TXRX == true
 else
     bs = commNode([0 0]);
     user = commNode([0]);
-    experiment.eth_trig = 0;
+    eth_trig = 0;
     sampFreq = 40e6;
     Ts = 1/sampFreq;
-    txLength = 32768;
 
 end
 
@@ -197,7 +183,7 @@ shortSymbol_freq = [0 0 0 0 0 0 0 0 1+i 0 0 0 -1+i 0 0 0 -1-i 0 0 0 1-i 0 0 0 -1
 shortSymbol_freq = [zeros(32,1);shortSymbol_freq;zeros(32,1)];
 shortSymbol_time = ifft(fftshift(shortSymbol_freq));
 shortSymbol_time = (shortSymbol_time(1:32).')./max(abs(shortSymbol_time));
-shortsyms_rep = repmat(shortSymbol_time,1,SHORT_SYMS_REPETITIONS);
+shortsyms_rep = repmat(shortSymbol_time,1,30);
 
 preamble_single = shortsyms_rep;
 preamble_single = preamble_single(:);
@@ -209,39 +195,46 @@ for k = 1:numTxAntennas
 end
 
 
-% Second, generate the training frame
-[pilot, trainSignal, pilotStartIndices] =  generateTrainSequence( ...
-    numTxAntennas, pilotLength, pilotToneFrequency, pilotAmplitude,  guardIntervalLength, Ts);
+transmitBandlimitedNoise = false;
+transmitTraining = true;
 
-% Second, generate the training frame
-[pilot, trainSignal_single, pilotStartIndex_single] =  generateTrainSequence( ...
-    1, pilotLength, pilotToneFrequency, pilotAmplitude,  guardIntervalLength, Ts);
+if transmitBandlimitedNoise 
+    payload = complex(randn(txLength-length(preamble),numTxAntennas),randn(txLength-length(preamble),numTxAntennas));
+    payload_freq = fftshift(fft(payload));
+    freqVec = linspace(-((1/Ts)/2e6),((1/Ts)/2e6),txLength-length(preamble));
+    BW = 1; %MHz 
+    noise_centerFreqs = linspace(-12,12,numTxAntennas);
+    for k = 1:numTxAntennas
+        payload_freq((freqVec < (noise_centerFreqs(k) - BW/2)) | (freqVec > (noise_centerFreqs(k) + BW/2)),k)=0;
+    end
+    payload = ifft(fftshift(payload_freq));
+
+    pktLength = txLength;
+
+elseif transmitTraining
+
+    [pilot, trainSignal, pilotStartIndices] =  generateTrainSequence( ...
+        numTxAntennas, pilotLength, pilotToneFrequency, guardIntervalLength, Ts);
+
+    trainLength = length(trainSignal);
+
+    payload = trainSignal;
+    pktLength = trainLength + length(preamble);
+
+    % Correct for added preabmle and tx/rx delay
+    txPilotStartIndices = pilotStartIndices + TXRX_DELAY + length(preamble);
+
+end
 
 
-% Correct for added preabmle and tx/rx delay
-txPilotStartIndices = pilotStartIndices + TXRX_DELAY + length(preamble);
+bs.txData = [preamble; payload];
 
-txPilotStartIndex_single = pilotStartIndex_single + TXRX_DELAY + length(preamble);
+sumTxData = sum(bs.txData,2);
 
-trainFrame = [preamble; trainSignal];
+% set(gcf, 'KeyPressFcn','RUN_CONTINOUSLY=0;');
+fprintf('Press any key to halt experiment\n')
 
-maxPayloadLength = txLength - length(preamble_single) - length(trainSignal_single);
-
-% Now generate a payload
-payloadLength = min(maxPayloadLength, PAYLOAD_LENGTH);
-
-% create time index for the payload
-t = [0:Ts:((payloadLength-1))*Ts].'; 
-
-%5 MHz sinusoid as our "payload" for RFA
-payload = payloadAmplitude*exp(t*j*2*pi*payloadToneFreq); 
-
-
-
-preamble_end_rssi = floor((length(preamble) + TXRX_DELAY)/4);
-
-preamble_rssi_measurement_window =  NUM_PREAMBLE_SAMPLES_LNA_SETTLE:preamble_end_rssi;
-
+% bs.rxRadios = 
 
 for i = 1:numPkts
 
@@ -249,24 +242,12 @@ for i = 1:numPkts
         experiment.generateChannelMatrices()
     end
 
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    % Phase 1: Zero-forcing transmission
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    % Transmit and receive training signal using WARPLab
+    % Transmit and receive signal using WARPLab
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-    bs.set('txFrame', trainFrame);
+    experiment.txrx_6x2x1(bs, user, eth_trig);
 
-    experiment.txrx_6x2x1(bs, user);
-
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    % Estimate channels from the received piolts
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
     H_est_selfInt = estimateChannelMat(...
         numTxAntennas, numRxAntennas, bs.rx_IQ, txPilotStartIndices, pilot);
@@ -274,132 +255,15 @@ for i = 1:numPkts
     H_est_user = estimateChannelMat(...
         numTxAntennas, numUsers, user.rx_IQ, txPilotStartIndices, pilot);
 
+
+
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    % Visualize received pilots
+    % Visualize results
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
     plot_IQ(bs.rx_IQ, bs.rx_power_dBm, numRxAntennas, 'BS Rx Pilots')
     plot_IQ(user.rx_IQ, user.rx_power_dBm, numUsers, 'User Rx Pilots')
-
-    ZF.bs.uncodedpower = ...
-        pow2db(mean(db2pow(bs.rx_power_dBm(preamble_rssi_measurement_window,:))));
-
-    ZF.user.uncodedpower = ...
-        pow2db(mean(db2pow(user.rx_power_dBm(preamble_rssi_measurement_window,:))));
-
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    % Zero-forcing a full data packet
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-    % null combining
-    selfIntNullspace = null(H_est_selfInt);
-
-
-    if isempty(selfIntNullspace)
-        ZF.precoder = ones(numTxAntennas,1)./sqrt(numTxAntennas);
-        warning('Cannot zero force')
-    else
-        ZF.precoder = selfIntNullspace(:,1);
-    end
-
-    precoderPower = pow2db(sum(sum(abs(ZF.precoder).^2)));
-
-
-    if abs(precoderPower - 0) > 1e-6 
-        error('Zero-forcing precoder does not have unity power')
-    end
-
-    dataFrame = [preamble_single; trainSignal_single; payload];
-
-    ZF.precodedDataFrame = (ZF.precoder * dataFrame .' ) .';
-
-    bs.set('txFrame', ZF.precodedDataFrame);
-
-    experiment.txrx_6x2x1(bs, user);
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    % Visualize received data frames
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    plot_IQ(bs.rx_IQ, bs.rx_power_dBm, numRxAntennas, 'BS Rx Data: zero-forcing')
-    plot_IQ(user.rx_IQ, user.rx_power_dBm, numUsers, 'User Rx Data: zero-forcing')
-
-    ZF.bs.precodedpower = ...
-        pow2db(mean(db2pow(bs.rx_power_dBm(preamble_rssi_measurement_window,:))));
-
-    ZF.user.precodedpower = ...
-        pow2db(mean(db2pow(user.rx_power_dBm(preamble_rssi_measurement_window,:))));
-
-    ZF.bs.beamGain = ZF.bs.precodedpower - ZF.bs.uncodedpower;
-    ZF.user.beamGain = ZF.user.precodedpower - ZF.user.uncodedpower;
     
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    % Phase 2: Matched filter transmission
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    % Transmit and receive training signal using WARPLab
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-    bs.set('txFrame', trainFrame);
-
-    experiment.txrx_6x2x1(bs, user);
-
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    % Estimate channels from the received piolts
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-    H_est_selfInt = estimateChannelMat(...
-        numTxAntennas, numRxAntennas, bs.rx_IQ, txPilotStartIndices, pilot);
-
-    H_est_user = estimateChannelMat(...
-        numTxAntennas, numUsers, user.rx_IQ, txPilotStartIndices, pilot);
-
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    % Visualize received pilots
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    plot_IQ(bs.rx_IQ, bs.rx_power_dBm, numRxAntennas, 'BS Rx Pilots')
-    plot_IQ(user.rx_IQ, user.rx_power_dBm, numUsers, 'User Rx Pilots')
-
-    MF.bs.uncodedpower = ...
-        pow2db(mean(db2pow(bs.rx_power_dBm(preamble_rssi_measurement_window,:))));
-
-    MF.user.uncodedpower = ...
-        pow2db(mean(db2pow(user.rx_power_dBm(preamble_rssi_measurement_window,:))));
-
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    % Matched filter transmission of full data packet to user
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-    MF.precoder = ctranspose(H_est_user) ./sqrt(sum(sum(abs(H_est_user).^2)));
-
-
-    precoderPower = pow2db(sum(sum(abs(MF.precoder).^2)));
-
-
-    if abs(precoderPower - 0) > 1e-6 
-        error('Zero-forcing precoder does not have unity power')
-    end
-  
-    MF.precodedDataFrame = (MF.precoder * dataFrame .' ) .';
-
-    bs.set('txFrame', MF.precodedDataFrame);
-
-    experiment.txrx_6x2x1(bs, user);
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    % Visualize received data frames
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    plot_IQ(bs.rx_IQ, bs.rx_power_dBm, numRxAntennas, 'BS Rx Data: mathched filter')
-    plot_IQ(user.rx_IQ, user.rx_power_dBm, numUsers, 'User Rx Data: mathched filter')
-    
-    MF.bs.precodedpower = ...
-        pow2db(mean(db2pow(bs.rx_power_dBm(preamble_rssi_measurement_window,:))));
-
-    MF.user.precodedpower = ...
-        pow2db(mean(db2pow(user.rx_power_dBm(preamble_rssi_measurement_window,:))));
-
-    MF.bs.beamGain = MF.bs.precodedpower - MF.bs.uncodedpower;
-    MF.user.beamGain = MF.user.precodedpower - MF.user.uncodedpower;
-
 
     drawnow
 
