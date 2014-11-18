@@ -50,7 +50,7 @@
 
 	%Set up the interface for the experiment
 	wl_interfaceCmd(nodes,'RF_ALL','tx_gains',3,30);
-	wl_interfaceCmd(nodes,'RF_ALL','channel',2.4,11);
+	wl_interfaceCmd(nodes,'RF_ALL','channel',2.4,14);
 
 	if(USE_AGC)
 	    wl_interfaceCmd(nodes,'RF_ALL','rx_gain_mode','automatic');

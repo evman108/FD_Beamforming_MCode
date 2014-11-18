@@ -27,7 +27,7 @@ PLOT_RX_DATA = true;
 
 VERBOSE = false;
 
-numPkts = 10;
+numPkts = 1;
 
 
 %%%%%%%%% WARPLab Parameters %%%%%%%%%%%%%%%
